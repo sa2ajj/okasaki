@@ -82,6 +82,8 @@ insert(X, Ts) ->
 merge(Ts1, Ts2) ->
     merge_trees(normalize(Ts1), normalize(Ts2)).
 
+find_min([]) ->
+    throw(empty);
 find_min([T]) ->
     root(T);
 find_min([T | Rest]) ->
