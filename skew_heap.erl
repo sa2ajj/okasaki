@@ -20,7 +20,7 @@ node_link({skew_heap_node, Rank, X1, XS1, C1}=T1, {skew_heap_node, _, X2, XS2, C
     case X1 =< X2 of
         true ->
             {skew_heap_node, Rank + 1, X1, XS1, [T2 | C1]};
-            
+
         false ->
             {skew_heap_node, Rank + 1, X2, XS2, [T1 | C2]}
     end.
@@ -31,7 +31,7 @@ skew_link(X, T1, T2) ->
     case X =< Y of
         true ->
             {skew_heap_node, Rank, X, [Y | Ys], C};
-            
+
         false ->
             {skew_heap_node, Rank, Y, [X | Ys], C}
     end.
@@ -42,7 +42,7 @@ ins_tree(T1, [T2 | Ts]) ->
     case rank(T1) < rank(T2) of
         true ->
             [T1 | [T2 | Ts]];
-            
+
         false ->
             ins_tree(node_link(T1, T2), Ts)
     end.
@@ -72,7 +72,7 @@ insert(X, Ts=[T1 | [T2 | Rest]]) ->
     case rank(T1) == rank(T2) of
         true ->
             [skew_link(X, T1, T2) | Rest];
-            
+
         false ->
             [{skew_heap_node, 0, X, [], []} | Ts]
     end;
