@@ -1,6 +1,6 @@
 -module(skew_heap).
 
--export([new/0, empty/1, insert/2, merge/2]).
+-export([new/0, empty/1, insert/2, merge/2, find_min/1]).
 
 %% -type skew_heap_tree() :: {skew_heap_node, integer(), term(), [term()], [skew_heap_tree()]}.
 
@@ -81,3 +81,16 @@ insert(X, Ts) ->
 
 merge(Ts1, Ts2) ->
     merge_trees(normalize(Ts1), normalize(Ts2)).
+
+find_min([T]) ->
+    root(T);
+find_min([T | Rest]) ->
+    X = root(T),
+    Y = find_min(Rest),
+    case X =< Y of
+        true ->
+            X;
+
+        false ->
+            Y
+    end.
