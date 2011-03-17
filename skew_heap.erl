@@ -2,6 +2,13 @@
 
 -export([new/0, empty/1, insert/2, merge/2, find_min/1, delete_min/1]).
 
+-record(skew_heap_node, {
+    rank,
+    root,
+    aux = [],
+    children = []
+}).
+
 %% -type skew_heap_tree() :: {skew_heap_node, integer(), term(), [term()], [skew_heap_tree()]}.
 
 new() ->
@@ -10,36 +17,30 @@ new() ->
 empty(X) ->
     X == [].
 
-rank({skew_heap_node, Rank, _, _, _}) ->
-    Rank.
-
-root({skew_heap_node, _, Root, _, _}) ->
-    Root.
-
-node_link({skew_heap_node, Rank, X1, XS1, C1}=T1, {skew_heap_node, _, X2, XS2, C2}=T2) ->
+node_link(#skew_heap_node{root=X1}=T1, #skew_heap_node{root=X2}=T2) ->
     case X1 =< X2 of
         true ->
-            {skew_heap_node, Rank + 1, X1, XS1, [T2 | C1]};
+            T1#skew_heap_node{rank=T1#skew_heap_node.rank + 1, children=[T2 | T1#skew_heap_node.children]};
 
         false ->
-            {skew_heap_node, Rank + 1, X2, XS2, [T1 | C2]}
+            T2#skew_heap_node{rank=T1#skew_heap_node.rank + 1, children=[T1 | T2#skew_heap_node.children]}
     end.
 
 skew_link(X, T1, T2) ->
-    {skew_heap_node, Rank, Y, Ys, C} = node_link(T1, T2),
+    Tempo = node_link(T1, T2),
 
-    case X =< Y of
+    case X =< Tempo#skew_heap_node.root of
         true ->
-            {skew_heap_node, Rank, X, [Y | Ys], C};
+            Tempo#skew_heap_node{root=X, aux=[Tempo#skew_heap_node.root | Tempo#skew_heap_node.aux]};
 
         false ->
-            {skew_heap_node, Rank, Y, [X | Ys], C}
+            Tempo#skew_heap_node{aux=[X | Tempo#skew_heap_node.aux]}
     end.
 
 ins_tree(T, []) ->
     [T];
 ins_tree(T1, [T2 | Ts]) ->
-    case rank(T1) < rank(T2) of
+    case T1#skew_heap_node.rank < T2#skew_heap_node.rank of
         true ->
             [T1 | [T2 | Ts]];
 
@@ -52,7 +53,7 @@ merge_trees(Ts1, []) ->
 merge_trees([], Ts2) ->
     Ts2;
 merge_trees([T1 | Ts1], [T2 | Ts2]) ->
-    case rank(T1) - rank(T2) of
+    case T1#skew_heap_node.rank - T2#skew_heap_node.rank of
         X when X < 0 ->
             [T1 | merge_trees(Ts1, [T2 | Ts2])];
 
@@ -69,15 +70,15 @@ normalize([T | Ts]) ->
     ins_tree(T, Ts).
 
 insert(X, Ts=[T1 | [T2 | Rest]]) ->
-    case rank(T1) == rank(T2) of
+    case T1#skew_heap_node.rank == T2#skew_heap_node.rank of
         true ->
             [skew_link(X, T1, T2) | Rest];
 
         false ->
-            [{skew_heap_node, 0, X, [], []} | Ts]
+            [#skew_heap_node{rank=0, root=X} | Ts]
     end;
 insert(X, Ts) ->
-    [{skew_heap_node, 0, X, [], []} | Ts].
+    [#skew_heap_node{rank=0, root=X} | Ts].
 
 merge(Ts1, Ts2) ->
     merge_trees(normalize(Ts1), normalize(Ts2)).
@@ -85,9 +86,9 @@ merge(Ts1, Ts2) ->
 find_min([]) ->
     throw(empty);
 find_min([T]) ->
-    root(T);
+    T#skew_heap_node.root;
 find_min([T | Rest]) ->
-    X = root(T),
+    X = T#skew_heap_node.root,
     Y = find_min(Rest),
     case X =< Y of
         true ->
@@ -106,7 +107,7 @@ get_min([T]) ->
     {T, []};
 get_min([T | Ts]) ->
     {T0, Ts0} = get_min(Ts),
-    case root(T) =< root(T0) of
+    case T#skew_heap_node.root =< T0#skew_heap_node.root of
         true ->
             {T, Ts};
 
@@ -117,5 +118,5 @@ get_min([T | Ts]) ->
 delete_min([]) ->
     throw(empty);
 delete_min(Ts) ->
-    {{skew_heap_node, _, _, Xs, C}, Ts0} = get_min(Ts),
+    {#skew_heap_node{aux=Xs, children=C}, Ts0} = get_min(Ts),
     insert_all(Xs, merge_trees(lists:reverse(C), normalize(Ts0))).
