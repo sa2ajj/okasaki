@@ -9,8 +9,6 @@
     children = []
 }).
 
-%% -type skew_heap_tree() :: {skew_heap_node, integer(), term(), [term()], [skew_heap_tree()]}.
-
 new() ->
     [].
 
